@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="月账通：一个通过多平台账单统一、关联返还识别与月度复盘，帮助用户理解真实消费的本地数据产品原型。">
+  <title>月账通｜智能账单复盘助手</title>
+  <style>
+    :root {
+      --ink: #16211d;
+      --muted: #66736d;
+      --paper: #f4f6f1;
+      --card: #ffffff;
+      --line: #dde3dc;
+      --green: #145c46;
+      --green-2: #26785e;
+      --mint: #dff4e9;
+      --lime: #cdea8b;
+      --orange: #ee8d4a;
+      --rose: #d95d6c;
+      --blue: #5074d8;
+      --shadow: 0 18px 48px rgba(28, 56, 44, .09);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 2%, rgba(205, 234, 139, .24), transparent 28rem),
+        radial-gradient(circle at 95% 22%, rgba(223, 244, 233, .9), transparent 30rem),
+        var(--paper);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      line-height: 1.55;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    .shell { max-width: 1240px; margin: 0 auto; padding: 22px 22px 64px; }
+
+    .topbar {
+      min-height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .brand-mark {
+      width: 38px; height: 38px; border-radius: 12px;
+      display: grid; place-items: center;
+      color: white; background: var(--green);
+      font-weight: 900; box-shadow: 0 10px 24px rgba(20, 92, 70, .24);
+    }
+    .brand strong { display: block; font-size: 17px; }
+    .brand span { display: block; color: var(--muted); font-size: 11px; letter-spacing: .08em; }
+    nav { display: flex; gap: 22px; color: var(--muted); font-size: 14px; }
+    nav a { text-decoration: none; }
+    nav a:hover { color: var(--green); }
+
+    .hero {
+      margin-top: 26px;
+      padding: 54px;
+      min-height: 365px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 32px;
+      background: var(--green);
+      color: white;
+      box-shadow: var(--shadow);
+    }
+    .hero::before, .hero::after {
+      content: ""; position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,.07);
+    }
+    .hero::before { width: 420px; height: 420px; right: -120px; top: -180px; }
+    .hero::after { width: 250px; height: 250px; right: 180px; bottom: -180px; }
+    .hero-copy { max-width: 730px; position: relative; z-index: 1; }
+    .eyebrow {
+      margin: 0 0 14px; color: var(--lime);
+      text-transform: uppercase; font-size: 12px; font-weight: 800; letter-spacing: .16em;
+    }
+    .hero h1 { margin: 0; font-size: clamp(34px, 5vw, 64px); line-height: 1.08; letter-spacing: -.04em; }
+    .hero-desc { max-width: 670px; margin: 21px 0 28px; color: rgba(255,255,255,.76); font-size: 17px; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      border: 0; border-radius: 999px; padding: 12px 19px;
+      font-weight: 800; transition: .18s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-light { background: var(--lime); color: #20351f; }
+    .btn-ghost { background: rgba(255,255,255,.1); color: white; border: 1px solid rgba(255,255,255,.24); }
+    .btn-green { background: var(--green); color: white; }
+    .btn-soft { background: #eef2ed; color: var(--ink); }
+    .hero-tags {
+      position: absolute; right: 38px; bottom: 34px; z-index: 1;
+      display: grid; gap: 9px; width: 250px;
+    }
+    .hero-tag {
+      padding: 11px 14px; border-radius: 14px;
+      background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.13);
+      backdrop-filter: blur(7px); font-size: 13px;
+    }
+    .hero-tag strong { color: var(--lime); }
+
+    .section-head {
+      display: flex; justify-content: space-between; align-items: end;
+      gap: 16px; margin: 56px 0 18px;
+    }
+    .section-head h2 { margin: 0; font-size: 28px; letter-spacing: -.03em; }
+    .section-head p { margin: 5px 0 0; color: var(--muted); }
+    .section-kicker { color: var(--green-2); font-size: 12px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+
+    .workspace { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
+    .card {
+      background: rgba(255,255,255,.94); border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+    }
+    .side { padding: 20px; position: sticky; top: 14px; }
+    .side h3, .panel h3 { margin: 0; font-size: 17px; }
+    .side-note { color: var(--muted); font-size: 13px; margin: 6px 0 14px; }
+
+    .dropzone {
+      display: block; padding: 26px 16px; text-align: center;
+      border: 1.5px dashed #9ebbad; border-radius: 17px; background: #f7faf6;
+      transition: .18s ease;
+    }
+    .dropzone:hover, .dropzone.drag { border-color: var(--green); background: var(--mint); }
+    .dropzone input { display: none; }
+    .upload-icon {
+      margin: 0 auto 10px; width: 42px; height: 42px; border-radius: 14px;
+      background: var(--mint); display: grid; place-items: center; color: var(--green); font-size: 22px;
+    }
+    .dropzone strong { display: block; }
+    .dropzone span { color: var(--muted); font-size: 12px; }
+
+    .side-actions { display: grid; gap: 9px; margin-top: 12px; }
+    .side-actions .btn { border-radius: 13px; padding: 11px; }
+    .privacy {
+      margin-top: 14px; padding: 12px; border-radius: 14px;
+      background: #f2f5f0; color: var(--muted); font-size: 12px;
+    }
+    .privacy strong { color: var(--green); }
+    .source-list { display: grid; gap: 8px; margin-top: 14px; }
+    .source-item {
+      padding: 10px 11px; border-radius: 12px; border: 1px solid var(--line);
+      font-size: 12px; display: flex; justify-content: space-between; gap: 10px;
+    }
+    .source-item span { color: var(--muted); }
+
+    .main-panel { padding: 22px; min-width: 0; }
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 18px;
+    }
+    .control-group { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+    .control {
+      border: 1px solid var(--line); background: white; border-radius: 12px;
+      min-height: 40px; padding: 8px 11px; color: var(--ink);
+    }
+    .status {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 11px; border-radius: 999px; background: var(--mint);
+      color: var(--green); font-size: 12px; font-weight: 800;
+    }
+    .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #3fa173; }
+
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .metric {
+      min-height: 128px; padding: 17px; border: 1px solid var(--line);
+      border-radius: 17px; background: #fbfcfa;
+    }
+    .metric .label { color: var(--muted); font-size: 12px; }
+    .metric strong { display: block; margin-top: 8px; font-size: 27px; letter-spacing: -.04em; }
+    .metric small { color: var(--muted); font-size: 11px; }
+    .metric.accent { background: var(--green); color: white; border-color: var(--green); }
+    .metric.accent .label, .metric.accent small { color: rgba(255,255,255,.7); }
+
+    .case-card {
+      margin-top: 14px; display: grid; grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 15px; align-items: center; padding: 20px;
+      border-radius: 18px; background: linear-gradient(135deg, #f2f9f5, #fbfcf9);
+      border: 1px solid #cfe5d9;
+    }
+    .case-step span { color: var(--muted); font-size: 11px; }
+    .case-step strong { display: block; margin-top: 4px; font-size: 20px; }
+    .case-step.final strong { color: var(--green); font-size: 24px; }
+    .case-arrow { color: #96a39c; font-weight: 900; }
+    .case-label {
+      display: inline-flex; padding: 4px 8px; border-radius: 999px;
+      background: var(--lime); color: #28422d; font-size: 11px; font-weight: 800; margin-bottom: 6px;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    .panel { padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: white; min-width: 0; }
+    .panel-title { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 15px; }
+    .panel-title span { color: var(--muted); font-size: 11px; }
+    .bars { display: grid; gap: 13px; }
+    .bar-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; margin-bottom: 5px; }
+    .bar-track { height: 9px; overflow: hidden; border-radius: 999px; background: #edf0eb; }
+    .bar-fill { height: 100%; min-width: 2px; border-radius: 999px; background: var(--green-2); }
+    .insights { display: grid; gap: 9px; }
+    .insight {
+      padding: 11px 12px; border-radius: 13px; background: #f6f8f5;
+      display: flex; gap: 9px; font-size: 12px;
+    }
+    .insight i { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--orange); flex: 0 0 auto; }
+
+    .table-panel { margin-top: 14px; }
+    .table-wrap { overflow: auto; max-height: 420px; border: 1px solid var(--line); border-radius: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 11px 10px; text-align: left; border-bottom: 1px solid #edf0ec; white-space: nowrap; }
+    th { position: sticky; top: 0; background: #f7f9f6; color: var(--muted); z-index: 1; }
+    tbody tr:hover { background: #fbfdfb; }
+    .amount-out { color: var(--rose); font-weight: 800; }
+    .amount-in { color: var(--green-2); font-weight: 800; }
+    .tag {
+      display: inline-flex; border-radius: 999px; padding: 3px 7px;
+      background: #eef2ed; color: #59645f; font-size: 10px;
+    }
+    .tag.warn { background: #fff0e5; color: #9c4b19; }
+    .tag.good { background: var(--mint); color: var(--green); }
+
+    .empty {
+      padding: 62px 20px; text-align: center; border: 1px dashed #b8c6be;
+      border-radius: 18px; background: #fafcf9; color: var(--muted);
+    }
+    .empty strong { display: block; color: var(--ink); font-size: 18px; margin-bottom: 7px; }
+
+    .story-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .story-card { padding: 22px; border-radius: 19px; background: white; border: 1px solid var(--line); }
+    .story-index { color: var(--green-2); font-size: 12px; font-weight: 900; letter-spacing: .12em; }
+    .story-card h3 { margin: 10px 0 8px; }
+    .story-card p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .flow {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+      padding: 18px; border-radius: 20px; background: #e8f2ec; border: 1px solid #cfe0d5;
+    }
+    .flow div { padding: 15px 12px; border-radius: 14px; background: white; text-align: center; font-size: 12px; font-weight: 800; }
+    .flow span { display: block; color: var(--green-2); font-size: 10px; margin-bottom: 4px; }
+
+    footer {
+      margin-top: 50px; padding-top: 22px; border-top: 1px solid var(--line);
+      display: flex; justify-content: space-between; gap: 18px; color: var(--muted); font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .hero { padding: 38px; }
+      .hero-tags { position: relative; right: auto; bottom: auto; width: auto; margin-top: 28px; grid-template-columns: repeat(3, 1fr); }
+      .workspace { grid-template-columns: 1fr; }
+      .side { position: static; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .story-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      .shell { padding: 14px 12px 44px; }
+      nav { display: none; }
+      .hero { padding: 30px 22px; border-radius: 24px; }
+      .hero-tags, .grid-2, .metrics { grid-template-columns: 1fr; }
+      .main-panel { padding: 14px; }
+      .case-card { grid-template-columns: 1fr; }
+      .case-arrow { transform: rotate(90deg); justify-self: center; }
+      .flow { grid-template-columns: 1fr; }
+      footer { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#">
+        <span class="brand-mark">账</span>
+        <span><strong>月账通</strong><span>SMART BILL REVIEW</span></span>
+      </a>
+      <nav>
+        <a href="#product">产品原型</a>
+        <a href="#logic">判断逻辑</a>
+        <a href="#process">项目过程</a>
+        <a href="https://github.com/cutekaka/bill-review-assistant">GitHub</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">AI-assisted Personal Data Product</p>
+        <h1>看见流水，更看懂<br>自己真正花了多少</h1>
+        <p class="hero-desc">统一多平台账单、识别疑似重复与朋友返还，用“流水总支出”和“个人实际承担”双口径完成月度消费复盘。</p>
+        <div class="hero-actions">
+          <button class="btn btn-light" id="heroDemo">载入虚构演示数据</button>
+          <a class="btn btn-ghost" href="#process" style="text-decoration:none">查看项目思路</a>
+        </div>
+      </div>
+      <div class="hero-tags">
+        <div class="hero-tag"><strong>本地解析</strong> · 数据不上传</div>
+        <div class="hero-tag"><strong>可解释</strong> · 保留判断依据</div>
+        <div class="hero-tag"><strong>双口径</strong> · 接近真实承担</div>
+      </div>
+    </section>
+
+    <div class="section-head" id="product">
+      <div>
+        <span class="section-kicker">Interactive prototype</span>
+        <h2>月度账单复盘</h2>
+        <p>点击演示数据即可体验，无需上传个人文件。</p>
+      </div>
+    </div>
+
+    <section class="workspace">
+      <aside class="card side">
+        <h3>导入账单</h3>
+        <p class="side-note">当前作品集版本支持 UTF-8 CSV / TXT，可一次导入多份文件。</p>
+        <label class="dropzone" id="dropzone">
+          <input id="fileInput" type="file" accept=".csv,.txt" multiple>
+          <span class="upload-icon">＋</span>
+          <strong>点击或拖拽文件</strong>
+          <span>系统将在浏览器本地完成解析</span>
+        </label>
+        <div class="side-actions">
+          <button class="btn btn-green" id="loadDemo">载入演示账单</button>
+          <button class="btn btn-soft" id="exportCsv">导出处理结果</button>
+          <button class="btn btn-soft" id="clearData">清空当前数据</button>
+        </div>
+        <div class="source-list" id="sourceList"></div>
+        <div class="privacy"><strong>隐私设计</strong><br>无后端、无数据库、无用户追踪。请勿把真实账单提交到公开仓库。</div>
+      </aside>
+
+      <main class="card main-panel">
+        <div class="toolbar">
+          <div class="control-group">
+            <span class="status" id="recordStatus">等待导入数据</span>
+            <select class="control" id="monthSelect" aria-label="选择复盘月份"></select>
+          </div>
+          <div class="control-group">
+            <input class="control" id="searchInput" placeholder="搜索商户、说明或分类">
+            <select class="control" id="categoryFilter"><option value="all">全部分类</option></select>
+          </div>
+        </div>
+
+        <div id="emptyState" class="empty">
+          <strong>先载入一份演示账单</strong>
+          页面将自动完成字段统一、分类、重复识别、朋友返还关联与复盘。
+        </div>
+
+        <div id="dashboard" hidden>
+          <div class="metrics">
+            <div class="metric">
+              <span class="label">流水总支出</span>
+              <strong id="grossExpense">¥0.00</strong>
+              <small>已排除疑似重复项</small>
+            </div>
+            <div class="metric">
+              <span class="label">已关联返还</span>
+              <strong id="reimbursements">¥0.00</strong>
+              <small>朋友还款 / AA 收款</small>
+            </div>
+            <div class="metric accent">
+              <span class="label">个人实际承担</span>
+              <strong id="actualExpense">¥0.00</strong>
+              <small>流水支出减关联返还</small>
+            </div>
+            <div class="metric">
+              <span class="label">疑似重复</span>
+              <strong id="duplicateCount">0 笔</strong>
+              <small>保留记录，默认不计入统计</small>
+            </div>
+          </div>
+
+          <div class="case-card">
+            <div class="case-step">
+              <span class="case-label">核心案例</span>
+              <span>聚餐垫付</span>
+              <strong id="casePayment">−¥300.00</strong>
+            </div>
+            <span class="case-arrow">→</span>
+            <div class="case-step">
+              <span>朋友返还</span>
+              <strong id="caseReturn">＋¥200.00</strong>
+            </div>
+            <span class="case-arrow">→</span>
+            <div class="case-step final">
+              <span>个人实际承担</span>
+              <strong id="caseActual">¥100.00</strong>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <section class="panel">
+              <div class="panel-title"><h3>实际承担结构</h3><span>按调整后分类</span></div>
+              <div class="bars" id="categoryBars"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-title"><h3>复盘提示</h3><span>由明细计算生成</span></div>
+              <div class="insights" id="insights"></div>
+            </section>
+          </div>
+
+          <section class="panel table-panel">
+            <div class="panel-title"><h3>可追溯交易明细</h3><span id="visibleCount">0 条</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>时间</th><th>来源</th><th>交易对象</th><th>分类</th><th>收支</th><th>流水金额</th><th>实际承担</th><th>识别结果</th></tr>
+                </thead>
+                <tbody id="recordTable"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </main>
+    </section>
+
+    <div class="section-head" id="logic">
+      <div>
+        <span class="section-kicker">Product logic</span>
+        <h2>把生活语义转化为数据规则</h2>
+        <p>项目的关键不是多画一张图，而是明确什么才算“我的消费”。</p>
+      </div>
+    </div>
+
+    <section class="story-grid">
+      <article class="story-card">
+        <span class="story-index">01 · DUPLICATE</span>
+        <h3>跨平台重复识别</h3>
+        <p>当银行卡再次记录微信或支付宝消费时，综合来源、金额、时间与交易说明标记疑似重复，保留原记录供用户复核。</p>
+      </article>
+      <article class="story-card">
+        <span class="story-index">02 · REIMBURSEMENT</span>
+        <h3>朋友返还关联</h3>
+        <p>识别“AA、返还、还款、聚餐”等语义，在相近日期内寻找候选垫付消费，将返还金额计入实际承担口径。</p>
+      </article>
+      <article class="story-card">
+        <span class="story-index">03 · UNCERTAINTY</span>
+        <h3>保留不确定性</h3>
+        <p>规则输出“疑似关联”和判断依据，不覆盖原始流水。无法确认的交易归入其他，避免为了分类完整而强行判断。</p>
+      </article>
+    </section>
+
+    <div class="section-head" id="process">
+      <div>
+        <span class="section-kicker">AI collaboration</span>
+        <h2>真实需求驱动的持续迭代</h2>
+        <p>AI 提高实现效率，我负责问题定义、判断标准与结果验证。</p>
+      </div>
+    </div>
+
+    <section class="flow">
+      <div><span>STEP 01</span>发现复盘痛点</div>
+      <div><span>STEP 02</span>定义数据口径</div>
+      <div><span>STEP 03</span>AI 协作实现</div>
+      <div><span>STEP 04</span>真实场景验证</div>
+      <div><span>STEP 05</span>修正规则迭代</div>
+    </section>
+
+    <footer>
+      <span>月账通 · 智能账单复盘助手</span>
+      <span>Personal project · Local-first · Fictional demo data only</span>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var state = { records: [], files: [] };
+      var reimbursementWords = ["aa", "返还", "还款", "聚餐", "分摊", "饭钱", "代付"];
+      var categoryRules = [
+        { name: "饮品零食", words: ["咖啡", "拿铁", "茶屿", "奶茶", "零食", "便利店", "水果茶"] },
+        { name: "正餐", words: ["餐厅", "食堂", "午餐", "晚餐", "外卖", "聚餐", "小馆", "火锅", "烧烤"] },
+        { name: "交通", words: ["地铁", "公交", "打车", "铁路", "12306", "出租", "通勤"] },
+        { name: "购物", words: ["商城", "淘宝", "京东", "背包", "耳机", "数码", "日用品"] },
+        { name: "会员订阅", words: ["会员", "订阅", "视频", "网盘"] },
+        { name: "住房生活", words: ["房租", "物业", "水费", "电费", "燃气"] },
+        { name: "文化娱乐", words: ["电影", "演出", "游戏", "展览", "门票"] },
+        { name: "学习成长", words: ["图书", "课程", "考试", "报名", "教材"] },
+        { name: "医疗健康", words: ["医院", "药房", "体检", "挂号"] }
+      ];
+
+      var demoRows = [
+        ["2026-07-03 08:32","微信","支出",18,"晨光咖啡","冰拿铁","餐饮"],
+        ["2026-07-05 12:14","支付宝","支出",31.5,"城市食堂","午餐","餐饮"],
+        ["2026-07-09 19:20","微信","支出",126,"江边小馆","朋友聚餐","餐饮"],
+        ["2026-07-12 09:02","支付宝","支出",12,"城市地铁","通勤","交通"],
+        ["2026-07-18 20:40","支付宝","支出",189,"青禾商城","日用品","购物"],
+        ["2026-07-25 09:00","银行卡","收入",6000,"示例公司","月度工资","收入"],
+        ["2026-08-02 08:31","微信","支出",20,"晨光咖啡","燕麦拿铁","餐饮"],
+        ["2026-08-03 12:05","支付宝","支出",36,"即时配送平台","午餐外卖","餐饮"],
+        ["2026-08-05 20:10","支付宝","支出",299,"青禾商城","通勤背包","购物"],
+        ["2026-08-05 20:11","银行卡","支出",299,"支付宝快捷支付","青禾商城订单","购物"],
+        ["2026-08-08 09:12","支付宝","支出",12,"城市地铁","通勤","交通"],
+        ["2026-08-10 19:45","微信","支出",300,"山海餐厅","朋友聚餐垫付","餐饮"],
+        ["2026-08-10 21:02","微信","收入",200,"朋友A","聚餐AA返还","转账"],
+        ["2026-08-12 22:14","支付宝","支出",45,"流光视频","月度会员","会员订阅"],
+        ["2026-08-14 18:30","微信","支出",23,"街角便利店","晚餐","餐饮"],
+        ["2026-08-18 21:30","支付宝","支出",520,"星云数码","无线耳机","购物"],
+        ["2026-08-22 15:20","微信","支出",28,"茶屿","水果茶","餐饮"],
+        ["2026-08-25 09:00","银行卡","收入",6000,"示例公司","月度工资","收入"]
+      ];
+
+      function el(id) { return document.getElementById(id); }
+      function clean(value) { return String(value == null ? "" : value).replace(/^\uFEFF/, "").trim(); }
+      function textKey(value) { return clean(value).replace(/\s+/g, "").toLowerCase(); }
+      function money(value) {
+        return "¥" + Number(value || 0).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      function parseDate(value) {
+        var d = new Date(clean(value).replace(/-/g, "/"));
+        return isNaN(d.getTime()) ? null : d;
+      }
+      function monthOf(date) {
+        if (!date) return "";
+        return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+      }
+      function escapeHtml(value) {
+        return String(value == null ? "" : value).replace(/[&<>"']/g, function (char) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
+        });
+      }
+      function inferCategory(record) {
+        if (record.direction === "收入") return "收入";
+        var full = textKey(record.counterparty + " " + record.description + " " + record.originalCategory);
+        for (var i = 0; i < categoryRules.length; i++) {
+          for (var j = 0; j < categoryRules[i].words.length; j++) {
+            if (full.indexOf(textKey(categoryRules[i].words[j])) >= 0) return categoryRules[i].name;
+          }
+        }
+        if (record.originalCategory && record.originalCategory !== "餐饮") return record.originalCategory;
+        return "其他";
+      }
+      function normalize(row, sourceName, index) {
+        var date = parseDate(row.datetime);
+        var direction = clean(row.direction) || (Number(row.amount) < 0 ? "支出" : "收入");
+        var amount = Math.abs(Number(String(row.amount).replace(/[¥￥元,\s]/g, ""))) || 0;
+        var record = {
+          id: sourceName + "-" + Date.now() + "-" + index,
+          datetime: clean(row.datetime),
+          date: date,
+          month: monthOf(date),
+          source: clean(row.source) || sourceName || "未知来源",
+          direction: direction.indexOf("支") >= 0 ? "支出" : "收入",
+          amount: amount,
+          counterparty: clean(row.counterparty),
+          description: clean(row.description),
+          originalCategory: clean(row.originalCategory),
+          category: "",
+          isDuplicate: false,
+          duplicateReason: "",
+          reimbursement: 0,
+          linkedExpenseId: "",
+          linkReason: ""
+        };
+        record.category = inferCategory(record);
+        return record;
+      }
+      function makeDemoRecord(row, index) {
+        return normalize({
+          datetime: row[0], source: row[1], direction: row[2], amount: row[3],
+          counterparty: row[4], description: row[5], originalCategory: row[6]
+        }, "演示数据", index);
+      }
+
+      function parseCsv(text) {
+        var rows = [], row = [], cell = "", quoted = false;
+        text = String(text).replace(/^\uFEFF/, "");
+        for (var i = 0; i < text.length; i++) {
+          var c = text[i], next = text[i + 1];
+          if (c === '"') {
+            if (quoted && next === '"') { cell += '"'; i++; }
+            else quoted = !quoted;
+          } else if (c === "," && !quoted) {
+            row.push(cell); cell = "";
+          } else if ((c === "\n" || c === "\r") && !quoted) {
+            if (c === "\r" && next === "\n") i++;
+            row.push(cell);
+            if (row.some(function (v) { return clean(v); })) rows.push(row);
+            row = []; cell = "";
+          } else cell += c;
+        }
+        row.push(cell);
+        if (row.some(function (v) { return clean(v); })) rows.push(row);
+        return rows;
+      }
+      function headerIndex(headers, candidates) {
+        for (var i = 0; i < candidates.length; i++) {
+          var wanted = textKey(candidates[i]);
+          for (var j = 0; j < headers.length; j++) {
+            var current = textKey(headers[j]);
+            if (current === wanted || current.indexOf(wanted) >= 0 || wanted.indexOf(current) >= 0) return j;
+          }
+        }
+        return -1;
+      }
+      function csvRecords(text, filename) {
+        var rows = parseCsv(text);
+        if (rows.length < 2) return [];
+        var headerRow = 0;
+        for (var r = 0; r < Math.min(rows.length, 15); r++) {
+          var joined = rows[r].join("|");
+          if (/时间|日期/.test(joined) && /金额|交易金额/.test(joined)) { headerRow = r; break; }
+        }
+        var headers = rows[headerRow];
+        var idx = {
+          datetime: headerIndex(headers, ["datetime","交易时间","交易创建时间","日期时间","日期"]),
+          source: headerIndex(headers, ["source","渠道","来源","平台"]),
+          direction: headerIndex(headers, ["direction","收/支","收支","交易类型"]),
+          amount: headerIndex(headers, ["amount","金额","交易金额","收支金额"]),
+          counterparty: headerIndex(headers, ["counterparty","交易对方","商户","对方户名"]),
+          description: headerIndex(headers, ["description","商品说明","商品名称","摘要","备注"]),
+          originalCategory: headerIndex(headers, ["original_category","原分类","分类"])
+        };
+        if (idx.datetime < 0 || idx.amount < 0) return [];
+        return rows.slice(headerRow + 1).map(function (cells, i) {
+          return normalize({
+            datetime: cells[idx.datetime],
+            source: idx.source >= 0 ? cells[idx.source] : filename.replace(/\.[^.]+$/, ""),
+            direction: idx.direction >= 0 ? cells[idx.direction] : "",
+            amount: cells[idx.amount],
+            counterparty: idx.counterparty >= 0 ? cells[idx.counterparty] : "",
+            description: idx.description >= 0 ? cells[idx.description] : "",
+            originalCategory: idx.originalCategory >= 0 ? cells[idx.originalCategory] : ""
+          }, filename, i);
+        }).filter(function (record) { return record.date && record.amount > 0; });
+      }
+
+      function detectDuplicates(records) {
+        records.forEach(function (r) { r.isDuplicate = false; r.duplicateReason = ""; });
+        var expenses = records.filter(function (r) { return r.direction === "支出"; });
+        for (var i = 0; i < expenses.length; i++) {
+          for (var j = i + 1; j < expenses.length; j++) {
+            var a = expenses[i], b = expenses[j];
+            if (a.source === b.source || Math.abs(a.amount - b.amount) > 0.01) continue;
+            var minutes = Math.abs(a.date - b.date) / 60000;
+            if (minutes > 30) continue;
+            var bankA = /银行|信用卡/.test(a.source);
+            var bankB = /银行|信用卡/.test(b.source);
+            var platformText = textKey(a.counterparty + a.description + b.counterparty + b.description);
+            if (bankA || bankB || /支付宝|微信|快捷支付/.test(platformText)) {
+              var dupe = bankB ? b : a;
+              dupe.isDuplicate = true;
+              dupe.duplicateReason = "与另一平台同金额、相近时间，疑似重复流水";
+            }
+          }
+        }
+      }
+
+      function linkReimbursements(records) {
+        records.forEach(function (r) {
+          r.reimbursement = 0; r.linkedExpenseId = ""; r.linkReason = "";
+        });
+        var incomes = records.filter(function (r) {
+          if (r.direction !== "收入") return false;
+          var content = textKey(r.counterparty + " " + r.description);
+          return reimbursementWords.some(function (word) { return content.indexOf(word) >= 0; });
+        });
+        incomes.forEach(function (income) {
+          var candidates = records.filter(function (expense) {
+            if (expense.direction !== "支出" || expense.isDuplicate || expense.amount < income.amount) return false;
+            var days = (income.date - expense.date) / 86400000;
+            return days >= 0 && days <= 3;
+          }).sort(function (a, b) {
+            var scoreA = Math.abs(income.date - a.date) - (/聚餐|餐厅|饭/.test(a.description + a.counterparty) ? 86400000 : 0);
+            var scoreB = Math.abs(income.date - b.date) - (/聚餐|餐厅|饭/.test(b.description + b.counterparty) ? 86400000 : 0);
+            return scoreA - scoreB;
+          });
+          if (candidates[0]) {
+            candidates[0].reimbursement += income.amount;
+            income.linkedExpenseId = candidates[0].id;
+            income.linkReason = "备注含返还语义，且与候选消费时间接近、金额不超过垫付金额";
+          }
+        });
+      }
+
+      function processRecords() {
+        detectDuplicates(state.records);
+        linkReimbursements(state.records);
+        render();
+      }
+      function months() {
+        return Array.from(new Set(state.records.map(function (r) { return r.month; }).filter(Boolean))).sort().reverse();
+      }
+      function selectedMonth() {
+        return el("monthSelect").value || months()[0] || "";
+      }
+      function monthRecords() {
+        var month = selectedMonth();
+        return state.records.filter(function (r) { return r.month === month; });
+      }
+      function expenseRows(rows) {
+        return rows.filter(function (r) { return r.direction === "支出" && !r.isDuplicate; });
+      }
+
+      function renderMonthOptions() {
+        var current = el("monthSelect").value;
+        var list = months();
+        el("monthSelect").innerHTML = list.map(function (m) {
+          return '<option value="' + escapeHtml(m) + '">' + escapeHtml(m) + " 月复盘</option>";
+        }).join("");
+        if (list.indexOf(current) >= 0) el("monthSelect").value = current;
+      }
+      function renderSources() {
+        var counts = {};
+        state.records.forEach(function (r) { counts[r.source] = (counts[r.source] || 0) + 1; });
+        el("sourceList").innerHTML = Object.keys(counts).map(function (source) {
+          return '<div class="source-item"><strong>' + escapeHtml(source) + '</strong><span>' + counts[source] + " 条</span></div>";
+        }).join("");
+      }
+      function renderFilters() {
+        var current = el("categoryFilter").value;
+        var categories = Array.from(new Set(state.records.map(function (r) { return r.category; }))).sort();
+        el("categoryFilter").innerHTML = '<option value="all">全部分类</option>' + categories.map(function (cat) {
+          return '<option value="' + escapeHtml(cat) + '">' + escapeHtml(cat) + "</option>";
+        }).join("");
+        if (categories.indexOf(current) >= 0) el("categoryFilter").value = current;
+      }
+      function renderMetrics(rows) {
+        var expenses = expenseRows(rows);
+        var gross = expenses.reduce(function (sum, r) { return sum + r.amount; }, 0);
+        var returns = expenses.reduce(function (sum, r) { return sum + r.reimbursement; }, 0);
+        var actual = Math.max(0, gross - returns);
+        var duplicates = rows.filter(function (r) { return r.isDuplicate; }).length;
+        el("grossExpense").textContent = money(gross);
+        el("reimbursements").textContent = money(returns);
+        el("actualExpense").textContent = money(actual);
+        el("duplicateCount").textContent = duplicates + " 笔";
+
+        var caseExpense = expenses.find(function (r) { return r.reimbursement > 0; });
+        if (caseExpense) {
+          el("casePayment").textContent = "−" + money(caseExpense.amount);
+          el("caseReturn").textContent = "＋" + money(caseExpense.reimbursement);
+          el("caseActual").textContent = money(Math.max(0, caseExpense.amount - caseExpense.reimbursement));
+        }
+      }
+      function renderBars(rows) {
+        var totals = {};
+        expenseRows(rows).forEach(function (r) {
+          totals[r.category] = (totals[r.category] || 0) + Math.max(0, r.amount - r.reimbursement);
+        });
+        var ordered = Object.keys(totals).map(function (key) { return { key: key, value: totals[key] }; })
+          .sort(function (a, b) { return b.value - a.value; });
+        var max = ordered[0] ? ordered[0].value : 1;
+        el("categoryBars").innerHTML = ordered.length ? ordered.map(function (item) {
+          return '<div><div class="bar-meta"><span>' + escapeHtml(item.key) + '</span><strong>' + money(item.value) +
+            '</strong></div><div class="bar-track"><div class="bar-fill" style="width:' +
+            Math.max(2, item.value / max * 100).toFixed(1) + '%"></div></div></div>';
+        }).join("") : '<span style="color:var(--muted);font-size:12px">暂无支出数据</span>';
+      }
+      function renderInsights(rows) {
+        var expenses = expenseRows(rows);
+        var gross = expenses.reduce(function (sum, r) { return sum + r.amount; }, 0);
+        var returns = expenses.reduce(function (sum, r) { return sum + r.reimbursement; }, 0);
+        var top = expenses.slice().sort(function (a, b) { return b.amount - a.amount; })[0];
+        var current = selectedMonth();
+        var list = [];
+        if (returns > 0) list.push("识别到 " + money(returns) + " 疑似朋友返还，本月实际承担比流水支出低 " + money(returns) + "。");
+        if (top) list.push("本月最高单笔支出为 " + escapeHtml(top.counterparty || top.description) + " " + money(top.amount) + "，可结合购买目的复核必要性。");
+        var previousDate = current ? new Date(current + "-01T00:00:00") : null;
+        if (previousDate) {
+          previousDate.setMonth(previousDate.getMonth() - 1);
+          var pm = monthOf(previousDate);
+          var previous = expenseRows(state.records.filter(function (r) { return r.month === pm; }))
+            .reduce(function (sum, r) { return sum + r.amount - r.reimbursement; }, 0);
+          var actual = gross - returns;
+          if (previous > 0) {
+            var rate = (actual - previous) / previous * 100;
+            list.push("个人实际承担较上月" + (rate >= 0 ? "增加 " : "减少 ") + Math.abs(rate).toFixed(1) + "%，变化由明细口径计算。");
+          }
+        }
+        var dupes = rows.filter(function (r) { return r.isDuplicate; }).length;
+        if (dupes) list.push("发现 " + dupes + " 笔跨平台疑似重复记录，已从核心统计排除并保留在明细中。");
+        if (!list.length) list.push("当前数据不足以形成稳定复盘结论，请导入完整月份账单并人工核对异常项。");
+        el("insights").innerHTML = list.slice(0, 4).map(function (tip) {
+          return '<div class="insight"><i></i><span>' + tip + "</span></div>";
+        }).join("");
+      }
+      function renderTable(rows) {
+        var query = textKey(el("searchInput").value);
+        var category = el("categoryFilter").value;
+        var visible = rows.filter(function (r) {
+          var matchesText = !query || textKey(r.counterparty + " " + r.description + " " + r.category).indexOf(query) >= 0;
+          var matchesCategory = category === "all" || r.category === category;
+          return matchesText && matchesCategory;
+        }).sort(function (a, b) { return b.date - a.date; });
+        el("visibleCount").textContent = visible.length + " 条";
+        el("recordTable").innerHTML = visible.map(function (r) {
+          var result = '<span class="tag">正常</span>';
+          if (r.isDuplicate) result = '<span class="tag warn">疑似重复</span>';
+          else if (r.reimbursement > 0) result = '<span class="tag good">垫付已关联返还</span>';
+          else if (r.linkedExpenseId) result = '<span class="tag good" title="' + escapeHtml(r.linkReason) + '">疑似朋友返还</span>';
+          var actual = r.direction === "支出" && !r.isDuplicate ? Math.max(0, r.amount - r.reimbursement) : 0;
+          return "<tr><td>" + escapeHtml(r.datetime) + "</td><td>" + escapeHtml(r.source) +
+            "</td><td><strong>" + escapeHtml(r.counterparty || "—") + "</strong><br><span style='color:var(--muted)'>" +
+            escapeHtml(r.description) + "</span></td><td>" + escapeHtml(r.category) + "</td><td>" +
+            escapeHtml(r.direction) + "</td><td class='" + (r.direction === "支出" ? "amount-out" : "amount-in") + "'>" +
+            (r.direction === "支出" ? "−" : "＋") + money(r.amount) + "</td><td>" +
+            (r.direction === "支出" && !r.isDuplicate ? money(actual) : "—") + "</td><td>" + result + "</td></tr>";
+        }).join("");
+      }
+      function render() {
+        var hasData = state.records.length > 0;
+        el("emptyState").hidden = hasData;
+        el("dashboard").hidden = !hasData;
+        el("recordStatus").textContent = hasData ? state.records.length + " 条记录 · 已完成本地处理" : "等待导入数据";
+        renderSources();
+        renderMonthOptions();
+        renderFilters();
+        if (!hasData) return;
+        var rows = monthRecords();
+        renderMetrics(rows);
+        renderBars(rows);
+        renderInsights(rows);
+        renderTable(rows);
+      }
+
+      function loadDemo() {
+        state.records = demoRows.map(makeDemoRecord);
+        state.files = [{ name: "虚构演示账单", count: state.records.length }];
+        processRecords();
+        el("monthSelect").value = "2026-08";
+        render();
+        document.getElementById("product").scrollIntoView({ behavior: "smooth" });
+      }
+      function readFiles(files) {
+        Array.from(files).forEach(function (file) {
+          var reader = new FileReader();
+          reader.onload = function () {
+            var parsed = csvRecords(reader.result, file.name);
+            if (!parsed.length) {
+              alert("未能识别 " + file.name + "。请使用 UTF-8 CSV，并至少包含日期/时间和金额字段。");
+              return;
+            }
+            state.records = state.records.concat(parsed);
+            state.files.push({ name: file.name, count: parsed.length });
+            processRecords();
+          };
+          reader.readAsText(file, "UTF-8");
+        });
+      }
+      function exportCsv() {
+        if (!state.records.length) { alert("请先载入或导入账单。"); return; }
+        var headers = ["时间","来源","收支","流水金额","交易对象","说明","调整后分类","疑似重复","关联返还","个人实际承担","判断依据"];
+        var rows = state.records.map(function (r) {
+          var actual = r.direction === "支出" && !r.isDuplicate ? Math.max(0, r.amount - r.reimbursement) : "";
+          var reason = r.duplicateReason || r.linkReason || (r.reimbursement ? "候选消费与朋友返还已关联" : "");
+          return [r.datetime,r.source,r.direction,r.amount,r.counterparty,r.description,r.category,r.isDuplicate ? "是" : "否",r.reimbursement || "",actual,reason];
+        });
+        function quote(value) { return '"' + String(value == null ? "" : value).replace(/"/g, '""') + '"'; }
+        var csv = "\uFEFF" + [headers].concat(rows).map(function (row) { return row.map(quote).join(","); }).join("\n");
+        var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url; a.download = "月账通_处理结果.csv"; a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      el("loadDemo").addEventListener("click", loadDemo);
+      el("heroDemo").addEventListener("click", loadDemo);
+      el("clearData").addEventListener("click", function () { state.records = []; state.files = []; render(); });
+      el("exportCsv").addEventListener("click", exportCsv);
+      el("fileInput").addEventListener("change", function (event) { readFiles(event.target.files); });
+      el("monthSelect").addEventListener("change", render);
+      el("searchInput").addEventListener("input", function () { renderTable(monthRecords()); });
+      el("categoryFilter").addEventListener("change", function () { renderTable(monthRecords()); });
+      var dropzone = el("dropzone");
+      dropzone.addEventListener("dragover", function (event) { event.preventDefault(); dropzone.classList.add("drag"); });
+      dropzone.addEventListener("dragleave", function () { dropzone.classList.remove("drag"); });
+      dropzone.addEventListener("drop", function (event) {
+        event.preventDefault(); dropzone.classList.remove("drag"); readFiles(event.dataTransfer.files);
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
