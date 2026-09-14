@@ -1,0 +1,22 @@
+# Personal bills and exports
+*.xlsx
+*.xls
+*.pdf
+*.ofx
+*.qfx
+*.qbo
+real-data/
+private-data/
+exports/
+
+# Environment and editor files
+.env
+.env.*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.log
